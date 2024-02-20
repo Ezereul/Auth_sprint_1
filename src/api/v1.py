@@ -62,3 +62,17 @@ async def refresh(Authorize: AuthJWT = Depends()):
 
     # rewrite old refresh token by new in Redis
     return {'msg': 'The token has been refreshed'}
+
+
+@router.post('/logout')
+async def logout(Authorize: AuthJWT = Depends()):
+    await Authorize.jwt_refresh_token_required()
+    # add token expiration validation (or it is already valid?)
+
+    # current_user = await Authorize.get_jwt_subject()
+    # remove old refresh token from redis by current_user.id
+
+    await Authorize.unset_access_cookies()
+    await Authorize.unset_refresh_cookies()
+
+    return {'msg': 'Successfully log out'}
