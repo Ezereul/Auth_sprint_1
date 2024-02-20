@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "auth-sprint-1"
+version = "0.1.0"
+description = ""
+authors = ["Maxim Isaev <isaev_0602@mail.ru>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.27"}
+alembic = "^1.13.1"
+redis = "^5.0.1"
+async-fastapi-jwt-auth = {extras = ["asymmetric"], version = "^0.6.2"}
+fastapi = "0.100.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
