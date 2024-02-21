@@ -41,9 +41,7 @@ class AuthSettings(BaseSettings):
     authjwt_cookie_csrf_protect: bool  # now False, recommended tot True in prod
     authjwt_cookie_samesite: str = 'none'  # def: 'none', recommended 'lax' in prod, available 'strict', 'lax', 'none'
 
-    # Never changes! Required to core functions.
-    authjwt_denylist_enabled: bool = False  # now False, must be True but denylist is not ready yet
-    authjwt_denylist_token_checks: set = {'refresh'}
+    # Never change! Required to core functions.
     authjwt_token_location: set = {'cookies'}
 
     model_config = SettingsConfigDict(env_file=ENV_PATH, extra='ignore')
