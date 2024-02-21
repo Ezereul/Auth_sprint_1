@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7.2.4
+    volumes:
+      - ./configs/redis.conf:/usr/local/etc/redis/redis.conf
+    ports:
+      - ${REDIS_PORT}:${REDIS_PORT}
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+
+  auth:
+    build:
+      context: .
+      target: dev
+    ports:
+      - ${AUTH_API_PORT}:${AUTH_API_PORT}
+    env_file:
+      - .env
+    volumes:
+      - ./src:/app/src
+    depends_on:
+      redis:
+        condition: service_healthy
