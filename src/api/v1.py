@@ -27,7 +27,7 @@ async def register(user: User):
 
 
 @router.post('/login')
-async def login(user: User, Authorize: AuthJWT = Depends()):
+async def login(user: User, authorization: AuthJWT = Depends()):
     db_user_data = stub_database.get_data(user.username)  # refactor to service, add DI
 
     if not db_user_data:
@@ -35,11 +35,11 @@ async def login(user: User, Authorize: AuthJWT = Depends()):
     if not pwd_context.verify(user.password, db_user_data.get('password')):
         raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail='Wrong password')
 
-    access_token = await Authorize.create_access_token(subject=user.username)
-    refresh_token = await Authorize.create_refresh_token(subject=user.username)
+    access_token = await authorization.create_access_token(subject=user.username)
+    refresh_token = await authorization.create_refresh_token(subject=user.username)
 
-    await Authorize.set_access_cookies(access_token)
-    await Authorize.set_refresh_cookies(refresh_token)
+    await authorization.set_access_cookies(access_token)
+    await authorization.set_refresh_cookies(refresh_token)
 
     # rewrite old refresh token by new in Redis
 
@@ -47,32 +47,32 @@ async def login(user: User, Authorize: AuthJWT = Depends()):
 
 
 @router.post('/refresh')
-async def refresh(Authorize: AuthJWT = Depends()):
-    await Authorize.jwt_refresh_token_required()
+async def refresh(authorization: AuthJWT = Depends()):
+    await authorization.jwt_refresh_token_required()
     # add token expiration validation (or it is already valid?)
     # check token in Redis
 
-    current_user = await Authorize.get_jwt_subject()
+    current_user = await authorization.get_jwt_subject()
 
-    new_access_token = await Authorize.create_access_token(subject=current_user)
-    new_refresh_token = await Authorize.create_refresh_token(subject=current_user)
+    new_access_token = await authorization.create_access_token(subject=current_user)
+    new_refresh_token = await authorization.create_refresh_token(subject=current_user)
 
-    await Authorize.set_access_cookies(new_access_token)
-    await Authorize.set_refresh_cookies(new_refresh_token)
+    await authorization.set_access_cookies(new_access_token)
+    await authorization.set_refresh_cookies(new_refresh_token)
 
     # rewrite old refresh token by new in Redis
     return {'msg': 'The token has been refreshed'}
 
 
 @router.post('/logout')
-async def logout(Authorize: AuthJWT = Depends()):
-    await Authorize.jwt_refresh_token_required()
+async def logout(authorization: AuthJWT = Depends()):
+    await authorization.jwt_refresh_token_required()
     # add token expiration validation (or it is already valid?)
 
     # current_user = await Authorize.get_jwt_subject()
     # remove old refresh token from redis by current_user.id
 
-    await Authorize.unset_access_cookies()
-    await Authorize.unset_refresh_cookies()
+    await authorization.unset_access_cookies()
+    await authorization.unset_refresh_cookies()
 
     return {'msg': 'Successfully log out'}
