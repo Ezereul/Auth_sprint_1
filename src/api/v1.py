@@ -6,8 +6,8 @@ from src.models.security import pwd_context
 from src.schemas.responses import DetailResponse
 from src.schemas.user import UserSchema
 
-router = APIRouter()
 
+router = APIRouter()
 
 @router.post(
     '/register',
