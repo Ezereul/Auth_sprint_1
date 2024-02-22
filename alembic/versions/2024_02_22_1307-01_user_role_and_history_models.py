@@ -1,8 +1,8 @@
-"""create user history role models
+"""user role and history models
 
-Revision ID: 931df847e6fc
+Revision ID: 01
 Revises: 
-Create Date: 2024-02-22 00:32:26.747287
+Create Date: 2024-02-22 13:07:35.317747
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '931df847e6fc'
+revision: str = '01'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -34,7 +34,7 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_user_email'), 'user', ['email'], unique=True)
     op.create_table('loginhistory',
-    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('user_id', sa.UUID(), nullable=True),
     sa.Column('login_time', sa.DateTime(), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),

@@ -1,3 +1,5 @@
+import uuid
+
 from sqlalchemy import Column, UUID
 from sqlalchemy.orm import declarative_base, declared_attr
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
@@ -10,7 +12,7 @@ class PreBase:
     def __tablename__(cls):
         return cls.__name__.lower()
 
-    id = Column(UUID, primary_key=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
 
 Base = declarative_base(cls=PreBase)
