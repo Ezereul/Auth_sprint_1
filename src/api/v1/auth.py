@@ -5,38 +5,38 @@ from fastapi import Depends, HTTPException, APIRouter
 
 from src.db.stub import stub_database
 from src.models.security import pwd_context
-from src.models.user import User
+from src.schemas.user import UserLogin, UserCreate
 
 
 router = APIRouter()
 
 
-@router.post('/register')
-async def register(user: User):
-    if stub_database.get_data(user.username):
+@router.post('/register', status_code=201)
+async def register(user: UserCreate):
+    if stub_database.get_data(user.email):
         raise HTTPException(status_code=HTTPStatus.CONFLICT, detail='Username already registered')
 
     # add password strength check
     password_hash = pwd_context.hash(user.password)
 
-    stub_database.save_data({user.username: password_hash})  # refactor to service, add DI
+    stub_database.save_data({user.email: password_hash})  # refactor to service, add DI
 
     # send registration email
 
-    return {'msg': 'Successfully registered. Verification email send on your email: %s' % user.username}
+    return {'msg': 'Successfully registered. Verification email send on your email: %s' % user.email}
 
 
 @router.post('/login')
-async def login(user: User, Authorize: AuthJWT = Depends()):
-    db_user_data = stub_database.get_data(user.username)  # refactor to service, add DI
+async def login(user: UserLogin, Authorize: AuthJWT = Depends()):
+    db_user_data = stub_database.get_data(user.email)  # refactor to service, add DI
 
     if not db_user_data:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Username is not registered')
     if not pwd_context.verify(user.password, db_user_data.get('password')):
         raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail='Wrong password')
 
-    access_token = await Authorize.create_access_token(subject=user.username)
-    refresh_token = await Authorize.create_refresh_token(subject=user.username)
+    access_token = await Authorize.create_access_token(subject=user.email)
+    refresh_token = await Authorize.create_refresh_token(subject=user.email)
 
     await Authorize.set_access_cookies(access_token)
     await Authorize.set_refresh_cookies(refresh_token)
