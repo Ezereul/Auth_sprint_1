@@ -11,12 +11,12 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 class User(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     password_hash = Column(String, nullable=False)
-    roles = relationship("Role", secondary="user_roles", back_populates="users")
-    login_history = relationship("LoginHistory", back_populates="user")
+    roles = relationship("Role", secondary="user_roles", back_populates="users", lazy='dynamic')
+    login_history = relationship("LoginHistory", back_populates="user", lazy='dynamic')
 
     @property
     def password(self):
-        raise AttributeError('Пароль не является читаемым атрибутом')
+        return None
 
     @password.setter
     def password(self, password: str):
@@ -26,4 +26,4 @@ class User(Base):
         return pwd_context.verify(password, self.password_hash)
 
     def __repr__(self):
-        return (f'<User(email={self.email}, roles={self.roles})>')
+        return (f'<User(email={self.username}>')

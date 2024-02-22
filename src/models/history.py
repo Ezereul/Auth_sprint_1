@@ -8,4 +8,4 @@ class LoginHistory(Base):
     user_id = Column(UUID, ForeignKey("user.id"))
     login_time = Column(DateTime, default=func.now())
 
-    user = relationship("User", back_populates="loginhistory")
+    user = relationship("User", back_populates="login_history")

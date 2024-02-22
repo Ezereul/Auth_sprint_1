@@ -1,3 +1,5 @@
+import http
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from src.api.v1 import auth
@@ -17,6 +19,10 @@ def get_settings():
 @app.exception_handler(AuthJWTException)  # add orjson to tweak performance
 def authjwt_exception_handler(request: Request, exc: AuthJWTException):
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.message})
+
+@app.exception_handler(ValueError)
+def value_error_handler(request: Request, exc: ValueError):
+    return JSONResponse(status_code=http.HTTPStatus.BAD_REQUEST, content={"detail": str(exc)})
 
 
 app.include_router(auth.router)
