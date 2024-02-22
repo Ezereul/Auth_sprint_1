@@ -26,14 +26,12 @@ app = FastAPI(
     log_level=settings.logger.level,
     default_response_class=JSONResponse,
 )
+app.include_router(v1.router)
 
 
 @app.exception_handler(AuthJWTException)  # add orjson to tweak performance
 def authjwt_exception_handler(request: Request, exc: AuthJWTException):
     return JSONResponse(status_code=exc.status_code, content={'detail': exc.message})
-
-
-app.include_router(v1.router)
 
 
 if __name__ == '__main__':

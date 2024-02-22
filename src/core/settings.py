@@ -1,3 +1,4 @@
+from functools import lru_cache
 from pathlib import Path
 
 from async_fastapi_jwt_auth import AuthJWT
@@ -8,7 +9,7 @@ ENV_PATH = PROJECT_ROOT / '.env'
 
 
 class RedisSettings(BaseSettings):
-    host: str = '127.0.0.1'
+    host: str = 'localhost'
     port: int = 6379
 
     model_config = SettingsConfigDict(env_prefix='REDIS_', env_file=ENV_PATH, extra='ignore')
@@ -17,7 +18,9 @@ class RedisSettings(BaseSettings):
 class LoggerSettings(BaseSettings):
     level: str
     format: str = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    default_handlers: list = ['console', ]
+    default_handlers: list = [
+        'console',
+    ]
     level_console: str = 'DEBUG'
     level_handlers: str = 'INFO'
     level_unicorn_errors: str = 'INFO'
@@ -32,6 +35,7 @@ class AuthSettings(BaseSettings):
     More about config:
     https://sijokun.github.io/async-fastapi-jwt-auth/configuration/cookies/
     """
+
     authjwt_algorithm: str
     authjwt_public_key: str
     authjwt_private_key: str
@@ -43,6 +47,8 @@ class AuthSettings(BaseSettings):
 
     # Never change! Required to core functions.
     authjwt_token_location: set = {'cookies'}
+    authjwt_denylist_enabled: bool = True
+    authjwt_denylist_token_checks: set = {'refresh'}
 
     model_config = SettingsConfigDict(env_file=ENV_PATH, extra='ignore')
 
@@ -58,9 +64,15 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ENV_PATH, extra='ignore')
 
 
-settings = Settings()
+@lru_cache
+def get_settings():
+    return Settings()
 
 
+settings = get_settings()
+
+
+@lru_cache
 @AuthJWT.load_config
-def set_auth_settings():
+def get_auth_settings():
     return settings.auth
