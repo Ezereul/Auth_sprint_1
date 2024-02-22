@@ -13,8 +13,8 @@ class UserService:
         if password == username:
             raise ValueError('Пароль совпадает с логином')
 
-        if (user := (await session.scalars(select(User).where())).first()):  # noqa
-            raise ValueError('Пользователь существует')
+        if (user := (await session.scalars(select(User).where(User.username == username))).first()):  # noqa
+            raise ValueError('Пользователь уже существует')
 
         new_user = User(username=username, password=password)
         session.add(new_user)
@@ -22,8 +22,15 @@ class UserService:
 
         return new_user
 
+    async def verify(self, username: str, password: str, session: AsyncSession):
+        user = (await session.scalars(select(User).where(User.username == username))).first()  # noqa
+
+        if user and user.is_correct_password(password):
+            return True
+
+        return False
 
 
-@lru_cache()
+@lru_cache
 def get_user_service() -> UserService:
     return UserService()

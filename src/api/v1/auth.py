@@ -5,8 +5,6 @@ from fastapi import Depends, HTTPException, APIRouter
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.db import get_async_session
-from src.db.stub import stub_database
-from src.models.security import pwd_context
 from src.schemas.user import UserLogin, UserCreateOrUpdate, UserDB
 from src.services.users import UserService, get_user_service
 
@@ -25,13 +23,14 @@ async def register(
 
 
 @router.post('/login')
-async def login(user: UserLogin, Authorize: AuthJWT = Depends()):
-    db_user_data = stub_database.get_data(user.username)  # refactor to service, add DI
+async def login(
+        user: UserLogin,
+        Authorize: AuthJWT = Depends(),
+        user_service: UserService = Depends(get_user_service),
+        session: AsyncSession = Depends(get_async_session)):
 
-    if not db_user_data:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Username is not registered')
-    if not pwd_context.verify(user.password, db_user_data.get('password')):
-        raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail='Wrong password')
+    if not await user_service.verify(user.username, user.password, session):
+        raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail='Неверный логин или пароль')
 
     access_token = await Authorize.create_access_token(subject=user.username)
     refresh_token = await Authorize.create_refresh_token(subject=user.username)
