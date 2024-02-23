@@ -1,12 +1,11 @@
 from typing import Annotated
 
-from async_fastapi_jwt_auth import AuthJWT
 from fastapi import Depends, HTTPException, APIRouter, status
 
 from src.db.stub import stub_database
 from src.schemas import UserSchema
 from src.schemas.responses import DetailResponse
-from src.services.authorization import get_authorization_service, AuthorizationService, get_fastapi_auth
+from src.services.authorization import get_authorization_service, AuthorizationService
 from src.utils import passwords
 from src.utils.passwords import verify
 
@@ -69,11 +68,13 @@ async def login(user: UserSchema, auth: Annotated[AuthorizationService, Depends(
 @router.post('/refresh', response_model=DetailResponse)
 async def refresh(
     auth: Annotated[AuthorizationService, Depends(get_authorization_service)],
-    fastapi_auth: AuthJWT = Depends(),
 ):
-    await fastapi_auth.jwt_refresh_token_required()
+    await auth.jwt_refresh_token_required()
 
-    current_user_id = await fastapi_auth.get_jwt_subject()
+    if not auth.is_refresh_token_in_whitelist:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Token is used or not exists')
+
+    current_user_id = await auth.get_jwt_subject()
 
     _, refresh_token = await auth.new_token_pair(current_user_id)
     await auth.save_refresh_token_to_redis(refresh_token)
@@ -82,9 +83,12 @@ async def refresh(
 
 
 @router.post('/logout', response_model=DetailResponse)
-async def logout(fastapi_auth: AuthJWT = Depends(),):
-    await fastapi_auth.jwt_refresh_token_required()
+async def logout(auth: Annotated[AuthorizationService, Depends(get_authorization_service)]):
+    await auth.jwt_refresh_token_required()
 
-    await fastapi_auth.unset_jwt_cookies()
+    if not auth.is_refresh_token_in_whitelist:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Token is used or not exists')
+
+    await auth.unset_jwt_cookies()
 
     return {'detail': 'Successfully log out'}

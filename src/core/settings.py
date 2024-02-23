@@ -47,8 +47,6 @@ class AuthSettings(BaseSettings):
 
     # Never change! Required to core functions.
     authjwt_token_location: set = {'cookies'}
-    authjwt_denylist_enabled: bool = True
-    authjwt_denylist_token_checks: set = {'refresh'}
 
     model_config = SettingsConfigDict(env_file=ENV_PATH, extra='ignore')
 

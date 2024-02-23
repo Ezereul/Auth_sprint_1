@@ -18,8 +18,7 @@ class AuthorizationService:
         self.redis: Redis = redis
         self.auth_jwt: AuthJWT = auth_jwt
 
-    @AuthJWT.token_in_denylist_loader
-    async def check_if_refresh_token_in_denylist(self, decrypted_token) -> bool:
+    async def is_refresh_token_in_whitelist(self, decrypted_token) -> bool:
         """
         Callback which checks if refresh token in the list of used tokens.
 
@@ -40,13 +39,16 @@ class AuthorizationService:
             True: In any other cases.
         """
         token_model = RedisTokenModel.model_validate(decrypted_token)
-        token_record = await self.redis.hget(name='redis_index', key=token_model.user_id)
+        token_id = token_model.user_id
+        token_record = await self.redis.hget(name='redis_index', key=token_id)
 
         if 'ready' in token_record:
             token_model.state = 'used'
-            await self.save_refresh_token_to_redis(token_model)
-            return False
-        return True
+            record_data: dict = token_model.model_dump(exclude={'user_id'})
+            await self.redis.hset(name=token_id, mapping=record_data)
+
+            return True
+        return False
 
     async def new_token_pair(self, user_id: str):
         """Create new access and refresh tokens. Write to cookies."""
@@ -79,10 +81,15 @@ class AuthorizationService:
         """Convert encoded token to raw jwt token."""
         return await self.auth_jwt.get_raw_jwt(encoded_token)
 
+    async def jwt_refresh_token_required(self):
+        return await self.auth_jwt.jwt_refresh_token_required()
+
+    async def get_jwt_subject(self):
+        return await self.auth_jwt.get_jwt_subject()
+
+    async def unset_jwt_cookies(self):
+        return await self.auth_jwt.unset_jwt_cookies()
+
 
 async def get_authorization_service(redis: Redis = Depends(get_redis), auth_jwt: AuthJWT = Depends(AuthJWT)):
     return AuthorizationService(redis, auth_jwt)
-
-
-async def get_fastapi_auth():
-    return AuthJWT
