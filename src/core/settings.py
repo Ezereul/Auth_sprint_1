@@ -56,8 +56,8 @@ class Settings(BaseSettings):
     logger: LoggerSettings = LoggerSettings()
     auth: AuthSettings = AuthSettings()
 
-    project_name: str
-    version: str
+    project_name: str = 'Authorization api'
+    version: str = '0.0.1'
 
     model_config = SettingsConfigDict(env_file=ENV_PATH, extra='ignore')
 

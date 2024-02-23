@@ -22,21 +22,15 @@ class AuthorizationService:
         """
         Callback which checks if refresh token in the list of used tokens.
 
-        If refresh token correct it will, its status on Redis becomes 'used'.
+        If refresh token correct (exists in Redis and status='ready'), status on Redis becomes 'used'.
 
         If callback result():
-            False -> The user gets access to the endpoint where the refresh token is required.
-            True -> The user has no valid refresh token in cookies. Access is not allowed.
-
-        Each key in Redis is a User UUID.
-        Each value can get one of three states:
-            None: A token is not in Redis. Expected callback result = True.
-            'used': A token already was used. Expected callback result = True. (attacker/user met each other).
-            'ready': A token is ready to use. Expected callback result = False.
+            True -> The user gets access to the endpoint where the refresh token is required.
+            False -> The user has no valid refresh token in cookies. Access is not allowed.
 
         Returns:
-            False: If token JTI == 'ready'.
-            True: In any other cases.
+            True: If token JTI == 'ready'.
+            False: In any other cases.
         """
         token_model = RedisTokenModel.model_validate(decrypted_token)
         token_id = token_model.user_id
@@ -57,6 +51,8 @@ class AuthorizationService:
 
         await self.auth_jwt.set_access_cookies(new_access_token)
         await self.auth_jwt.set_refresh_cookies(new_refresh_token)
+
+        await self.save_refresh_token_to_redis(new_refresh_token)
 
         return new_access_token, new_refresh_token
 

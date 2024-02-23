@@ -4,16 +4,14 @@ services:
   redis:
     image: redis:7.2.4
     volumes:
-      - ./configs/redis.conf:/usr/local/etc/redis/redis.conf
+      - redis_data:/data
     ports:
       - ${REDIS_PORT}:${REDIS_PORT}
     healthcheck:
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
 
   auth:
-    build:
-      context: .
-      target: dev
+    build: .
     ports:
       - ${AUTH_API_PORT}:${AUTH_API_PORT}
     env_file:
@@ -23,3 +21,6 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+
+volumes:
+  redis_data:

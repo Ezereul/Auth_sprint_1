@@ -58,9 +58,7 @@ async def login(user: UserSchema, auth: Annotated[AuthorizationService, Depends(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Wrong password')
 
     # add role payload to access token
-    _, refresh_token = await auth.new_token_pair(db_user_data['id'])
-
-    await auth.save_refresh_token_to_redis(refresh_token)
+    await auth.new_token_pair(db_user_data['id'])
 
     return {'detail': 'Successfully login'}
 
@@ -72,7 +70,7 @@ async def refresh(
     await auth.jwt_refresh_token_required()
 
     if not auth.is_refresh_token_in_whitelist:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Token is used or not exists')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Token was used or not exists')
 
     current_user_id = await auth.get_jwt_subject()
 
@@ -87,7 +85,7 @@ async def logout(auth: Annotated[AuthorizationService, Depends(get_authorization
     await auth.jwt_refresh_token_required()
 
     if not auth.is_refresh_token_in_whitelist:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Token is used or not exists')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Token was used or not exists')
 
     await auth.unset_jwt_cookies()
 
