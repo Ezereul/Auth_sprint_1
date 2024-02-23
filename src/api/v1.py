@@ -9,8 +9,8 @@ from src.services.authorization import get_authorization_service, AuthorizationS
 from src.utils import passwords
 from src.utils.passwords import verify
 
-router = APIRouter()
 
+router = APIRouter()
 
 @router.post(
     '/register',
