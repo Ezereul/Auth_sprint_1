@@ -1,3 +1,5 @@
+import logging
+
 from async_fastapi_jwt_auth import AuthJWT
 from fastapi import Depends
 from pydantic import BaseModel, Field
@@ -10,7 +12,7 @@ class RedisTokenModel(BaseModel):
     user_id: str = Field(validation_alias='sub')
     jti: str = Field(validation_alias='jti')
     expires_at: int = Field(validation_alias='exp')
-    state: str = 'ready'
+    status: str = 'ready'
 
 
 class AuthorizationService:
@@ -18,7 +20,7 @@ class AuthorizationService:
         self.redis: Redis = redis
         self.auth_jwt: AuthJWT = auth_jwt
 
-    async def is_refresh_token_in_whitelist(self, decrypted_token) -> bool:
+    async def is_refresh_token_in_whitelist(self) -> bool:
         """
         Callback which checks if refresh token in the list of used tokens.
 
@@ -32,16 +34,14 @@ class AuthorizationService:
             True: If token JTI == 'ready'.
             False: In any other cases.
         """
-        token_model = RedisTokenModel.model_validate(decrypted_token)
-        token_id = token_model.user_id
-        token_record = await self.redis.hget(name='redis_index', key=token_id)
+        record_id = await self.auth_jwt.get_jwt_subject()
+        token_status = await self.redis.hget(name=record_id, key='status')
 
-        if 'ready' in token_record:
-            token_model.state = 'used'
-            record_data: dict = token_model.model_dump(exclude={'user_id'})
-            await self.redis.hset(name=token_id, mapping=record_data)
+        if token_status == b'ready':
+            await self.redis.hset(name=record_id, key='status', value='used')
 
             return True
+
         return False
 
     async def new_token_pair(self, user_id: str):

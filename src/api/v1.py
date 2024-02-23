@@ -69,13 +69,12 @@ async def refresh(
 ):
     await auth.jwt_refresh_token_required()
 
-    if not auth.is_refresh_token_in_whitelist:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Token was used or not exists')
+    if not await auth.is_refresh_token_in_whitelist():
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token was used or doesn't exist")
 
     current_user_id = await auth.get_jwt_subject()
 
-    _, refresh_token = await auth.new_token_pair(current_user_id)
-    await auth.save_refresh_token_to_redis(refresh_token)
+    await auth.new_token_pair(current_user_id)
 
     return {'detail': 'The token has been refreshed'}
 
@@ -84,8 +83,8 @@ async def refresh(
 async def logout(auth: Annotated[AuthorizationService, Depends(get_authorization_service)]):
     await auth.jwt_refresh_token_required()
 
-    if not auth.is_refresh_token_in_whitelist:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Token was used or not exists')
+    if not await auth.is_refresh_token_in_whitelist():
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token was used or doesn't exist")
 
     await auth.unset_jwt_cookies()
 
