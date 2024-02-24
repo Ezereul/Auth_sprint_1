@@ -9,4 +9,4 @@ class HistorySchema(BaseModel):
     login_time: datetime = Field(..., example=datetime.now().strftime('%Y-%m-%dT%H:%M'))
 
     class Config:
-        orm_mode = True
+        from_attributes = True
