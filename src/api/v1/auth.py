@@ -5,6 +5,7 @@ from src.core.db import get_async_session
 from src.schemas.responses import DetailResponse
 from src.schemas.user import UserLogin, UserCreateOrUpdate, UserDB
 from src.services.authentication import AuthenticationService, get_authentication_service
+from src.services.history import HistoryService, get_history_service
 from src.services.users import UserService, get_user_service
 
 router = APIRouter()
@@ -42,9 +43,11 @@ async def login(
     user: UserLogin,
     auth_service: AuthenticationService = Depends(get_authentication_service),
     user_service: UserService = Depends(get_user_service),
+    history_service: HistoryService = Depends(get_history_service),
     session: AsyncSession = Depends(get_async_session),
 ):
     user = await user_service.verify(user.username, user.password, session)
+    await history_service.create(session, user.id)
 
     await auth_service.new_token_pair(user_id=str(user.id))
 
