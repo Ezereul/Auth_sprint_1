@@ -7,16 +7,17 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
-sqlalchemy = {extras = ["asyncio"], version = "^2.0.27"}
-alembic = "^1.13.1"
-redis = "^5.0.1"
-async-fastapi-jwt-auth = {extras = ["asymmetric"], version = "^0.6.2"}
+sqlalchemy = {extras = ["asyncio"], version = "2.0.27"}
+alembic = "1.13.1"
+redis = "5.0.1"
+async-fastapi-jwt-auth = {extras = ["asymmetric"], version = "0.6.2"}
 fastapi = "0.100.1"
 uvicorn = "0.27.1"
-passlib = "1.7.4"
+gunicorn = "21.2.0"
+passlib = {extras = ["argon2"], version = "1.7.4"}
 asyncpg = "^0.29.0"
-bcrypt = "^4.1.2"
-
+pydantic = "2.6.1"
+pydantic-settings = "2.2.1"
 
 [build-system]
 requires = ["poetry-core"]
