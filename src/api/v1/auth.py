@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.db import get_async_session
 from src.schemas.user import UserLogin, UserCreateOrUpdate, UserDB
+from src.services.history import HistoryService, get_history_service
 from src.services.users import UserService, get_user_service
 
 router = APIRouter()
@@ -27,13 +28,13 @@ async def login(
         user: UserLogin,
         Authorize: AuthJWT = Depends(),
         user_service: UserService = Depends(get_user_service),
+        history_service: HistoryService = Depends(get_history_service),
         session: AsyncSession = Depends(get_async_session)):
+    user = await user_service.verify(user.username, user.password, session)
+    await history_service.create(session, user.id)
 
-    if not await user_service.verify(user.username, user.password, session):
-        raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail='Неверный логин или пароль')
-
-    access_token = await Authorize.create_access_token(subject=user.username)
-    refresh_token = await Authorize.create_refresh_token(subject=user.username)
+    access_token = await Authorize.create_access_token(subject=str(user.id))
+    refresh_token = await Authorize.create_refresh_token(subject=str(user.id))
 
     await Authorize.set_access_cookies(access_token)
     await Authorize.set_refresh_cookies(refresh_token)

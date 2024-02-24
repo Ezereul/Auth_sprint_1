@@ -2,7 +2,7 @@ import http
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from src.api.v1 import auth
+from src.api.v1 import auth, history
 from async_fastapi_jwt_auth import AuthJWT
 from async_fastapi_jwt_auth.exceptions import AuthJWTException
 
@@ -26,6 +26,7 @@ def value_error_handler(request: Request, exc: ValueError):
 
 
 app.include_router(auth.router)
+app.include_router(history.history_router)
 
 
 if __name__ == "__main__":

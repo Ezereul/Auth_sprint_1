@@ -1,4 +1,5 @@
 from functools import lru_cache
+from fastapi import status, HTTPException
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -23,12 +24,13 @@ class UserService:
         return new_user
 
     async def verify(self, username: str, password: str, session: AsyncSession):
-        user = (await session.scalars(select(User).where(User.username == username))).first()  # noqa
+        if not (user := (await session.scalars(select(User).where(User.username == username))).first()):  # noqa
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Username is not registered')
 
-        if user and user.is_correct_password(password):
-            return True
+        if not user.is_correct_password(password):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Wrong password')
 
-        return False
+        return user
 
 
 @lru_cache
