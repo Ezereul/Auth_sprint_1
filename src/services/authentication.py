@@ -58,6 +58,7 @@ class AuthenticationService:
         raw_jwt_token = await self.auth_jwt.get_raw_jwt(encoded_token)
         token_model = RedisTokenModel(**raw_jwt_token)
         await self.redis.hset(name=token_model.record_id, mapping=token_model.dict(exclude={'record_id'}))
+        await self.redis.expireat(name=token_model.record_id, when=token_model.expires_at)
 
     async def _refresh_token_mark_as_used(self, record_id: str):
         """
