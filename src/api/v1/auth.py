@@ -1,4 +1,6 @@
-from fastapi import Depends, APIRouter, status
+from typing import Annotated
+
+from fastapi import Depends, APIRouter, status, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.db import get_async_session
@@ -41,6 +43,7 @@ async def register(
 )
 async def login(
     user: UserLogin,
+    user_agent: Annotated[str, Header(include_in_schema=False)] = 'None',
     auth_service: AuthenticationService = Depends(get_authentication_service),
     history_service: HistoryService = Depends(get_history_service),
     user_service: UserService = Depends(get_user_service),
@@ -49,7 +52,7 @@ async def login(
     user = await user_service.verify(user.username, user.password, session)
     await history_service.create(session, user.id)
 
-    await auth_service.new_token_pair(subject=str(user.id), claims={'role': 'stub'})  # вместо 'stub' будет user.role
+    await auth_service.new_token_pair(subject='%s:%s' % (user.id, user_agent), claims={'role': 'stub'})
 
     return {'detail': 'Successfully login'}
 
@@ -58,8 +61,7 @@ async def login(
 async def refresh(auth_service: AuthenticationService = Depends(get_authentication_service)):
     await auth_service.jwt_refresh_token_required()
 
-    subject = await auth_service.get_jwt_subject()
-    await auth_service.new_token_pair(subject=subject, claims={'role': 'stub'})
+    await auth_service.new_token_pair(claims={'role': 'stub'})
 
     return {'detail': 'The token has been refreshed'}
 

@@ -34,11 +34,13 @@ class AuthenticationService:
         token_used = await self.redis.hget(name=record_id, key='used')
         return not token_used == 'False'
 
-    async def new_token_pair(self, subject: str, claims: dict | None = None):
+    async def new_token_pair(self, subject: str = None, claims: dict | None = None):
         """Create new access and refresh tokens. Write to cookies and Redis."""
+        subject = subject if subject else await self.auth_jwt.get_jwt_subject()
+        claims = claims if claims else {}
+
         await self._refresh_token_mark_as_used(subject)
 
-        claims = claims if claims else {}
         new_access_token = await self.auth_jwt.create_access_token(subject=subject, user_claims=claims)
         new_refresh_token = await self.auth_jwt.create_refresh_token(subject=subject)
 
@@ -68,13 +70,11 @@ class AuthenticationService:
         await self.redis.hset(name=record_id, key='used', value='True')
 
     async def jwt_refresh_token_required(self):
+        """Extend `jwt_refresh_token_required()` to also check is token available to use."""
         await self.auth_jwt.jwt_refresh_token_required()
 
         if await self.is_refresh_token_used():
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token was used or doesn't exist")
-
-    async def get_jwt_subject(self):
-        return await self.auth_jwt.get_jwt_subject()
 
 
 @lru_cache
