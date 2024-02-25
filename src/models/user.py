@@ -4,6 +4,7 @@ from sqlalchemy.orm import relationship
 
 from src.core.db import Base
 
+
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 
