@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, APIRouter, status
+from fastapi import Depends, APIRouter, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.db import get_async_session
@@ -46,7 +46,7 @@ async def login(
 ):
     user = await user_service.verify(user.username, user.password, session)
 
-    await auth_service.new_token_pair(user_id=str(user.id))
+    await auth_service.new_token_pair(subject=str(user.id), claims={'role': 'stub'})  # вместо 'stub' будет user.role
 
     return {'detail': 'Successfully login'}
 
@@ -55,12 +55,8 @@ async def login(
 async def refresh(auth_service: AuthenticationService = Depends(get_authentication_service)):
     await auth_service.jwt_refresh_token_required()
 
-    if not await auth_service.is_refresh_token_in_whitelist():
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token was used or doesn't exist")
-
-    current_user_id = await auth_service.get_jwt_subject()
-
-    await auth_service.new_token_pair(current_user_id)
+    subject = await auth_service.get_jwt_subject()
+    await auth_service.new_token_pair(subject=subject, claims={'role': 'stub'})
 
     return {'detail': 'The token has been refreshed'}
 
@@ -69,9 +65,6 @@ async def refresh(auth_service: AuthenticationService = Depends(get_authenticati
 async def logout(auth_service: AuthenticationService = Depends(get_authentication_service)):
     await auth_service.jwt_refresh_token_required()
 
-    if not await auth_service.is_refresh_token_in_whitelist():
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token was used or doesn't exist")
-
-    await auth_service.unset_jwt_cookies()
+    await auth_service.logout()
 
     return {'detail': 'Successfully log out'}

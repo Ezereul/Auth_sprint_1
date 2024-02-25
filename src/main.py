@@ -14,7 +14,7 @@ from src.db import redis
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    redis.redis = Redis(host=settings.redis.host, port=settings.redis.port)
+    redis.redis = Redis(host=settings.redis.host, port=settings.redis.port, decode_responses=True)
     yield
     await redis.redis.close()
 

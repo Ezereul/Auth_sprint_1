@@ -1,96 +1,81 @@
+from functools import lru_cache
+
 from async_fastapi_jwt_auth import AuthJWT
-from fastapi import Depends
-from pydantic import BaseModel, Field
+from fastapi import Depends, HTTPException, status
+from pydantic import BaseModel, Field, field_serializer
 from redis.asyncio import Redis
 
 from src.db.redis import get_redis
 
 
 class RedisTokenModel(BaseModel):
-    user_id: str = Field(validation_alias='sub')
+    record_id: str = Field(validation_alias='sub')
     jti: str = Field(validation_alias='jti')
     expires_at: int = Field(validation_alias='exp')
-    status: str = 'ready'
+    used: bool = False
+
+    @field_serializer('used')
+    def serialize_used_to_string(self, used: bool):
+        return str(used)
 
 
 class AuthenticationService:
-    def __init__(self, redis, auth_jwt):
-        self.redis: Redis = redis
-        self.auth_jwt: AuthJWT = auth_jwt
+    def __init__(self, redis: Redis, auth_jwt: AuthJWT):
+        self.redis = redis
+        self.auth_jwt = auth_jwt
 
-    async def is_refresh_token_in_whitelist(self) -> bool:
+    async def is_refresh_token_used(self) -> bool:
         """
-        Callback which checks if refresh token in the list of used tokens.
+        Check if current refresh token in the list of used tokens.
 
-        If refresh token correct (exists in Redis and status='ready'), status on Redis becomes 'used'.
-
-        If callback result():
-            True -> The user gets access to the endpoint where the refresh token is required.
-            False -> The user has no valid refresh token in cookies. Access is not allowed.
-
-        Returns:
-            True: If token JTI == 'ready'.
-            False: In any other cases.
+        :return: True if token was already used or does not exist, else False
         """
         record_id = await self.auth_jwt.get_jwt_subject()
-        token_status = await self.redis.hget(name=record_id, key='status')
+        token_used = await self.redis.hget(name=record_id, key='used')
+        return not token_used == 'False'
 
-        if token_status == b'ready':
-            await self.redis.hset(name=record_id, key='status', value='used')
+    async def new_token_pair(self, subject: str, claims: dict | None = None):
+        """Create new access and refresh tokens. Write to cookies and Redis."""
+        await self._refresh_token_mark_as_used(subject)
 
-            return True
-
-        return False
-
-    async def new_token_pair(self, user_id: str):
-        """Create new access and refresh tokens. Write to cookies."""
-        new_access_token = await self.auth_jwt.create_access_token(subject=user_id)
-        new_refresh_token = await self.auth_jwt.create_refresh_token(subject=user_id)
+        claims = claims if claims else {}
+        new_access_token = await self.auth_jwt.create_access_token(subject=subject, user_claims=claims)
+        new_refresh_token = await self.auth_jwt.create_refresh_token(subject=subject)
 
         await self.auth_jwt.set_access_cookies(new_access_token)
         await self.auth_jwt.set_refresh_cookies(new_refresh_token)
 
-        await self.save_refresh_token_to_redis(new_refresh_token)
+        await self._save_refresh_token_to_redis(new_refresh_token)
 
-        return new_access_token, new_refresh_token
+    async def logout(self):
+        """Mark refresh token as used in Redis. Remove tokens from cookies."""
+        subject = await self.auth_jwt.get_jwt_subject()
+        await self._refresh_token_mark_as_used(subject)
+        await self.auth_jwt.unset_jwt_cookies()
 
-    async def save_refresh_token_to_redis(self, token_data: str | dict | RedisTokenModel):
+    async def _save_refresh_token_to_redis(self, encoded_token: str):
+        """Save refresh token to Redis."""
+        raw_jwt_token = await self.auth_jwt.get_raw_jwt(encoded_token)
+        token_model = RedisTokenModel(**raw_jwt_token)
+        await self.redis.hset(name=token_model.record_id, mapping=token_model.dict(exclude={'record_id'}))
+
+    async def _refresh_token_mark_as_used(self, record_id: str):
         """
-        Save refresh token to Redis.
-
-        Available formats: [str, dict, RedisTokenModel]
-        String format is an encoded token.
-        Dict format is a raw dict of token.
-        RedisTokenModel format is a RedisTokenModel, validated from token.
+        Change refresh token 'used' status in redis storage to True.
+        :param record_id: ID of the token in Redis.
         """
-        if type(token_data) is str:
-            token_data = await self.encoded_to_raw_jwt(token_data)
-
-        if type(token_data) is dict:
-            token_data = await self.raw_jwt_to_model(token_data)
-
-        record_id = token_data.user_id
-        record_data: dict = token_data.model_dump(exclude={'user_id'})
-
-        await self.redis.hset(name=record_id, mapping=record_data)
-
-    async def raw_jwt_to_model(self, raw_jwt_token: dict):
-        """Convert raw jwt token to Redis model."""
-        return RedisTokenModel.model_validate(raw_jwt_token)
-
-    async def encoded_to_raw_jwt(self, encoded_token: str):
-        """Convert encoded token to raw jwt token."""
-        return await self.auth_jwt.get_raw_jwt(encoded_token)
+        await self.redis.hset(name=record_id, key='used', value='True')
 
     async def jwt_refresh_token_required(self):
-        return await self.auth_jwt.jwt_refresh_token_required()
+        await self.auth_jwt.jwt_refresh_token_required()
+
+        if await self.is_refresh_token_used():
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token was used or doesn't exist")
 
     async def get_jwt_subject(self):
         return await self.auth_jwt.get_jwt_subject()
 
-    async def unset_jwt_cookies(self):
-        return await self.auth_jwt.unset_jwt_cookies()
 
-
-async def get_authentication_service(redis: Redis = Depends(get_redis), auth_jwt: AuthJWT = Depends(AuthJWT)):
+@lru_cache
+def get_authentication_service(redis: Redis = Depends(get_redis), auth_jwt: AuthJWT = Depends(AuthJWT)):
     return AuthenticationService(redis, auth_jwt)

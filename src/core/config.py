@@ -63,12 +63,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ENV_PATH, extra='ignore')
 
 
-@lru_cache
-def get_settings():
-    return Settings()
-
-
-settings = get_settings()
+settings = Settings()
 
 
 @lru_cache
