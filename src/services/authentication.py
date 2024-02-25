@@ -71,7 +71,7 @@ class AuthenticationService:
         await self.auth_jwt.jwt_refresh_token_required()
 
         if await self.is_refresh_token_used():
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token was used or doesn't exist")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Token was used or does not exist')
 
     async def get_jwt_subject(self):
         return await self.auth_jwt.get_jwt_subject()
