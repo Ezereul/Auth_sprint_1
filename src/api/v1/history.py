@@ -2,15 +2,17 @@ from fastapi import Depends, APIRouter
 from sqlalchemy.ext.asyncio import AsyncSession
 from async_fastapi_jwt_auth import AuthJWT
 
+from src.api.permission import has_permission
+from src.core.constants import RoleAccess
 from src.core.db import get_async_session
 from src.schemas.history import HistorySchema
 from src.services.history import HistoryService, get_history_service
 
 
-history_router = APIRouter()
+router = APIRouter()
 
 
-@history_router.get('/history', response_model=list[HistorySchema], status_code=201)
+@router.get('/', response_model=list[HistorySchema], dependencies=[Depends(has_permission(RoleAccess.USER))])
 async def get_user_history(
         Authorize: AuthJWT = Depends(),
         history_service: HistoryService = Depends(get_history_service),

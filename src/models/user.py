@@ -1,5 +1,5 @@
 from passlib.context import CryptContext
-from sqlalchemy import Column, String
+from sqlalchemy import Column, String, UUID, ForeignKey
 from sqlalchemy.orm import relationship
 
 from src.core.db import Base
@@ -11,7 +11,9 @@ pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 class User(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     password_hash = Column(String, nullable=False)
-    roles = relationship("Role", secondary="user_roles", back_populates="users", lazy='dynamic')
+    role_id = Column(UUID, ForeignKey('role.id'))
+
+    role = relationship("Role", back_populates='users')
     login_history = relationship("LoginHistory", back_populates="user", lazy='dynamic')
 
     @property

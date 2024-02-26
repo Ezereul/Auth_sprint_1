@@ -6,7 +6,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from redis.asyncio import Redis
 
-from src.api.v1 import auth, history
+from src.api.routers import main_router
 from src.core import logger
 from src.core.config import settings
 from src.db import redis
@@ -27,8 +27,7 @@ app = FastAPI(
     log_level=settings.logger.level,
     default_response_class=JSONResponse,
 )
-app.include_router(auth.router)
-app.include_router(history.history_router)
+app.include_router(main_router)
 
 
 @app.exception_handler(AuthJWTException)  # add orjson to tweak performance
