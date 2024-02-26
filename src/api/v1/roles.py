@@ -97,7 +97,3 @@ async def revoke_role(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
 
     return await role_service.revoke_role(session, user)
-    # return UserWithRole(
-    #     username=user.username,
-    #     role=None
-    # )
