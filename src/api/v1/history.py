@@ -17,6 +17,6 @@ async def get_user_history(
         session: AsyncSession = Depends(get_async_session)):
     await Authorize.jwt_refresh_token_required()
 
-    user_id = (await Authorize.get_jwt_subject()).partition(':')[0]
+    user_id = await Authorize.get_jwt_subject()
 
     return await history_service.get_history(session, user_id)

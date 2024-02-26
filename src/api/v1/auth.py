@@ -52,24 +52,36 @@ async def login(
     user = await user_service.verify(user.username, user.password, session)
     await history_service.create(session, user.id)
 
-    await auth_service.new_token_pair(subject='%s:%s' % (user.id, user_agent), claims={'role': 'stub'})
+    await auth_service.new_token_pair(user_id=str(user.id), claims={'role': 'stub', 'device': user_agent})
 
     return {'detail': 'Successfully login'}
 
 
 @router.post('/refresh', response_model=DetailResponse)
-async def refresh(auth_service: AuthenticationService = Depends(get_authentication_service)):
+async def refresh(
+    auth_service: AuthenticationService = Depends(get_authentication_service),
+    user_agent: Annotated[str, Header(include_in_schema=False)] = 'None',
+):
     await auth_service.jwt_refresh_token_required()
 
-    await auth_service.new_token_pair(claims={'role': 'stub'})
+    await auth_service.new_token_pair(claims={'role': 'stub', 'device': user_agent})
 
     return {'detail': 'The token has been refreshed'}
 
 
 @router.post('/logout', response_model=DetailResponse)
 async def logout(auth_service: AuthenticationService = Depends(get_authentication_service)):
-    await auth_service.jwt_refresh_token_required()
+    await auth_service.jwt_required()
 
     await auth_service.logout()
 
     return {'detail': 'Successfully log out'}
+
+
+@router.post('/logout_all', response_model=DetailResponse)
+async def logout_all(auth_service: AuthenticationService = Depends(get_authentication_service)):
+    await auth_service.jwt_refresh_token_required()
+
+    await auth_service.logout_all()
+
+    return {'detail': 'Successfully log out from all devices'}
