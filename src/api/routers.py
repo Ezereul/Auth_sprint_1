@@ -2,7 +2,6 @@ from fastapi import APIRouter
 
 from src.api.v1 import auth_router, history_router, role_router
 
-
 main_router = APIRouter()
 
 main_router.include_router(

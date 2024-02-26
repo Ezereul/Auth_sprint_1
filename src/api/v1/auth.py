@@ -1,15 +1,15 @@
-from fastapi import Depends, APIRouter, status, HTTPException
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.api.permission import has_permission
+from src.core.constants import RoleAccess
 from src.core.db import get_async_session
 from src.schemas.responses import DetailResponse
-from src.schemas.user import UserLogin, UserCreateOrUpdate, UserDB
+from src.schemas.user import UserCreateOrUpdate, UserDB, UserLogin
 from src.services.authentication import AuthenticationService, get_authentication_service
 from src.services.history import HistoryService, get_history_service
+from src.services.roles import RoleService, get_role_service
 from src.services.users import UserService, get_user_service
-from src.services.roles import get_role_service, RoleService
-from src.core.constants import DEFAULT_ROLE_DATA, RoleAccess
-from src.api.permission import has_permission
 
 router = APIRouter()
 

@@ -1,14 +1,13 @@
 from functools import lru_cache
 from uuid import UUID
 
-from fastapi import status, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.user import User
 
-# alembic revision --autogenerate -m "user role and history models" --rev-id 01
-# alembic upgrade head
+
 class UserService:
     async def get_by_name(self, session: AsyncSession, username: str):
         return (await session.scalars(select(User).where(User.username == username))).first()  # noqa

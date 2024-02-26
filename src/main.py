@@ -1,4 +1,3 @@
-import http
 from contextlib import asynccontextmanager
 
 from async_fastapi_jwt_auth.exceptions import AuthJWTException

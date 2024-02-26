@@ -1,5 +1,4 @@
-from enum import Enum, IntEnum
-
+from enum import IntEnum
 
 DEFAULT_ROLE_DATA = {
     'name': 'user',

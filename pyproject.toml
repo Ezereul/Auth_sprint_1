@@ -19,6 +19,33 @@ pydantic = "2.6.1"
 pydantic-settings = "2.2.1"
 passlib = {extras = ["argon2"], version = "1.7.4"}
 
+[tool.poetry.group.dev.dependencies]
+flake8 = "^7.0.0"
+isort = "^5.13.2"
+flake8-pyproject = "^1.2.3"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+# -- Flake8 --
+[tool.flake8]
+max-line-length = 135
+exclude = [
+    "__submodules__",
+    ".git",
+    "__samples__",
+    ".venv",
+    "alembic"
+]
+max-returns-amount = 10
+max-parameters-amount = 25
+per-file-ignores = [
+    'tests/*:F811'
+]
+
+# -- isort --
+[tool.isort]
+line_length = 135
+multi_line_output = 3
+sections = ['FUTURE', 'STDLIB', 'THIRDPARTY', 'FIRSTPARTY', 'LOCALFOLDER']
