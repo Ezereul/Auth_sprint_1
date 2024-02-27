@@ -1,9 +1,11 @@
 from functools import lru_cache
 
+import redis.exceptions
 from async_fastapi_jwt_auth import AuthJWT
 from fastapi import Depends, HTTPException, status
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import BaseModel, Field
 from redis.asyncio import Redis
+
 from src.db.redis import get_redis
 
 
@@ -19,9 +21,6 @@ class AuthenticationService:
         self.redis = redis
         self.auth_jwt = auth_jwt
 
-    async def jwt_required(self):
-        await self.auth_jwt.jwt_required()
-
     async def is_token_fresh(self) -> bool:
         """
         Check if current refresh token in the list of used tokens.
@@ -36,17 +35,13 @@ class AuthenticationService:
 
         return True
 
-    async def jwt_refresh_token_required(self):
-        """Extend `jwt_refresh_token_required()` to also check is token available to use."""
+    async def fresh_jwt_refresh_token_required(self):
+        """Extend `jwt_refresh_token_required()` to also check if token available to use."""
         await self.auth_jwt.jwt_refresh_token_required()
         await self.is_token_fresh()
 
-    async def _current_token(self) -> RedisToken | None:
-        raw = await self.auth_jwt.get_raw_jwt()
-        return RedisToken(**raw) if raw else None
-
     async def new_token_pair(self, user_id: str = None, claims: dict | None = None):
-        """Create new access and refresh tokens. Write to cookies and Redis."""
+        """Create new access and refresh tokens. Save to cookies and Redis."""
         token = await self._current_token()
         if token:
             await self._mark_token_used(token.jti, token.user_id)
@@ -63,20 +58,26 @@ class AuthenticationService:
         await self._save_token(new_refresh_token)
 
     async def logout(self):
-        """Mark refresh token as used in Redis. Remove tokens from cookies."""
+        """Mark refresh token as used in Redis. Clear tokens cookies."""
+        token = await self._current_token()
         try:
-            await self.jwt_refresh_token_required()
-            token = await self._current_token()
             await self._mark_token_used(token.jti, token.user_id)
-        except HTTPException:
+        except redis.exceptions.ResponseError:
             pass
-        finally:
-            await self.auth_jwt.unset_jwt_cookies()
+        await self.auth_jwt.unset_jwt_cookies()
 
     async def logout_all(self):
+        """Mark all refresh tokens as used for specific user. Clear tokens cookies."""
         user = await self.auth_jwt.get_jwt_subject()
+
         await self._mark_all_tokens_used(user)
+
         await self.auth_jwt.unset_jwt_cookies()
+
+    async def _current_token(self) -> RedisToken | None:
+        """Get token, which was required."""
+        raw = await self.auth_jwt.get_raw_jwt()
+        return RedisToken(**raw) if raw else None
 
     async def _save_token(self, encoded_token: str):
         """Save refresh token to Redis."""
@@ -104,7 +105,7 @@ class AuthenticationService:
 
         :param user_id: ID of the user.
         """
-        async for record in self.redis.scan_iter(name='fresh:*:' + user_id, _type='STRING'):
+        async for record in self.redis.scan_iter(match='fresh:*:' + user_id, _type='STRING'):
             await self.redis.rename(record, 'used' + record[5:])
 
 

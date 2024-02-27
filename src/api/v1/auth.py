@@ -62,7 +62,7 @@ async def refresh(
     auth_service: AuthenticationService = Depends(get_authentication_service),
     user_agent: Annotated[str, Header(include_in_schema=False)] = 'None',
 ):
-    await auth_service.jwt_refresh_token_required()
+    await auth_service.fresh_jwt_refresh_token_required()
 
     await auth_service.new_token_pair(claims={'role': 'stub', 'device': user_agent})
 
@@ -71,7 +71,7 @@ async def refresh(
 
 @router.post('/logout', response_model=DetailResponse)
 async def logout(auth_service: AuthenticationService = Depends(get_authentication_service)):
-    await auth_service.jwt_required()
+    await auth_service.auth_jwt.jwt_refresh_token_required()
 
     await auth_service.logout()
 
@@ -80,7 +80,7 @@ async def logout(auth_service: AuthenticationService = Depends(get_authenticatio
 
 @router.post('/logout_all', response_model=DetailResponse)
 async def logout_all(auth_service: AuthenticationService = Depends(get_authentication_service)):
-    await auth_service.jwt_refresh_token_required()
+    await auth_service.fresh_jwt_refresh_token_required()
 
     await auth_service.logout_all()
 
