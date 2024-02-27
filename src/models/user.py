@@ -18,9 +18,9 @@ class User(Base):
     @validates('username')
     def validate_username(self, key, username):
         if len(username) < 4:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Username length must be > 3')
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Username length must be > 3')
         if self.is_correct_password(username):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Username cannot be same as password')
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Username cannot be same as password')
         return username
 
     @property
@@ -30,9 +30,9 @@ class User(Base):
     @password.setter
     def password(self, password: str):
         if len(password) < 8:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Password length must be > 7')
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Password length must be > 7')
         if password == self.username:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Password cannot be same as Username')
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Password cannot be same as Username')
 
         self.password_hash = pwd_context.hash(password)
 

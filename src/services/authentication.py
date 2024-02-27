@@ -76,6 +76,9 @@ class AuthenticationService:
     async def get_jwt_subject(self):
         return await self.auth_jwt.get_jwt_subject()
 
+    async def jwt_required(self):
+        return await self.auth_jwt.jwt_required()
+
 
 @lru_cache
 def get_authentication_service(redis: Redis = Depends(get_redis), auth_jwt: AuthJWT = Depends(AuthJWT)):
