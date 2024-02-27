@@ -41,7 +41,8 @@ exclude = [
 max-returns-amount = 10
 max-parameters-amount = 25
 per-file-ignores = [
-    'tests/*:F811'
+    'tests/*:F811',
+    '__init__.py:F401'
 ]
 
 # -- isort --

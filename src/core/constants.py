@@ -6,8 +6,8 @@ DEFAULT_ROLE_DATA = {
 }
 
 SUPERUSER_ROLE_DATA = {
-    'name': 'admin',
-    'access_level': 10
+    'name': 'superuser',
+    'access_level': 20
 }
 
 

@@ -21,7 +21,7 @@ class UserService:
         if password == username:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Password cannot be equal to login')
 
-        if user := await self.get_by_name(session, username):  # noqa
+        if await self.get_by_name(session, username):
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Username already registered')
 
         new_user = User(username=username, password=password)
@@ -31,7 +31,7 @@ class UserService:
         return new_user
 
     async def verify(self, username: str, password: str, session: AsyncSession):
-        if not (user := await self.get_by_name(session, username)):  # noqa
+        if not (user := await self.get_by_name(session, username)):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Username is not registered')
 
         if not user.is_correct_password(password):
