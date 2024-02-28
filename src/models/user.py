@@ -12,7 +12,7 @@ pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 class User(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     password_hash = Column(String, nullable=False)
-    role_id = Column(UUID, ForeignKey('role.id'))
+    role_id = Column(UUID, ForeignKey('role.id'), nullable=False)
 
     role = relationship("Role", back_populates='users')
     login_history = relationship("LoginHistory", back_populates="user", lazy='dynamic')

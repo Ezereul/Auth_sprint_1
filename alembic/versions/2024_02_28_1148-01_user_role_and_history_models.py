@@ -2,7 +2,7 @@
 
 Revision ID: 01
 Revises: 
-Create Date: 2024-02-26 17:17:52.349061
+Create Date: 2024-02-28 11:48:36.130847
 
 """
 from typing import Sequence, Union
@@ -30,7 +30,7 @@ def upgrade() -> None:
     op.create_table('user',
     sa.Column('username', sa.String(), nullable=False),
     sa.Column('password_hash', sa.String(), nullable=False),
-    sa.Column('role_id', sa.UUID(), nullable=True),
+    sa.Column('role_id', sa.UUID(), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.ForeignKeyConstraint(['role_id'], ['role.id'], ),
     sa.PrimaryKeyConstraint('id')
