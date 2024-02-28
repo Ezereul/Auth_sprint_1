@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 
 from async_fastapi_jwt_auth.exceptions import AuthJWTException
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from redis.asyncio import Redis
 
@@ -28,7 +28,6 @@ app = FastAPI(
     log_level=settings.logger.level,
     default_response_class=JSONResponse,
 )
-app.include_router(account.account_router, prefix='/account')
 app.add_exception_handler(AuthJWTException, authjwt_exception_handler)
 app.add_exception_handler(AccountDataException, account_exception_handler)
 app.include_router(main_router)
