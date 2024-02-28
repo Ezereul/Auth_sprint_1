@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Header, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.permission import has_permission
@@ -46,6 +48,7 @@ async def register(
 )
 async def login(
     user: UserLogin,
+    user_agent: Annotated[str, Header(include_in_schema=False)] = 'None',
     auth_service: AuthenticationService = Depends(get_authentication_service),
     history_service: HistoryService = Depends(get_history_service),
     user_service: UserService = Depends(get_user_service),
@@ -55,33 +58,42 @@ async def login(
     await history_service.create(session, user.id)
 
     role = await user.awaitable_attrs.role
-
-    await auth_service.new_token_pair(subject=str(user.id), claims={'access_level': role.access_level})
+    await auth_service.new_token_pair(user_id=str(user.id), claims={'device': user_agent, 'access_level': role.access_level})
 
     return {'detail': 'Successfully login'}
 
 
 @router.post('/refresh', response_model=DetailResponse, dependencies=[Depends(has_permission(RoleAccess.USER))])
 async def refresh(
-        auth_service: AuthenticationService = Depends(get_authentication_service),
-        user_service: UserService = Depends(get_user_service),
-        session: AsyncSession = Depends(get_async_session)
+    auth_service: AuthenticationService = Depends(get_authentication_service),
+    user_agent: Annotated[str, Header(include_in_schema=False)] = 'None',
+    user_service: UserService = Depends(get_user_service),
+    session: AsyncSession = Depends(get_async_session)
 ):
-    await auth_service.jwt_refresh_token_required()
+    await auth_service.fresh_jwt_refresh_token_required()
 
     subject = await auth_service.get_jwt_subject()
     user = await user_service.get(session, subject)
     role = await user.awaitable_attrs.role
 
-    await auth_service.new_token_pair(subject=subject, claims={'access_level': role.access_level})
+    await auth_service.new_token_pair(subject=subject, claims={'device': user_agent, 'access_level': role.access_level})
 
     return {'detail': 'Token has been refreshed'}
 
 
 @router.post('/logout', response_model=DetailResponse)
 async def logout(auth_service: AuthenticationService = Depends(get_authentication_service)):
-    await auth_service.jwt_refresh_token_required()
+    await auth_service.auth_jwt.jwt_refresh_token_required()
 
     await auth_service.logout()
 
     return {'detail': 'Successfully log out'}
+
+
+@router.post('/logout_all', response_model=DetailResponse)
+async def logout_all(auth_service: AuthenticationService = Depends(get_authentication_service)):
+    await auth_service.fresh_jwt_refresh_token_required()
+
+    await auth_service.logout_all()
+
+    return {'detail': 'Successfully log out from all devices'}
