@@ -5,12 +5,11 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from redis.asyncio import Redis
 
+from src.api.errors import account_exception_handler, authjwt_exception_handler
 from src.api.routers import main_router
-from src.api.errors import authjwt_exception_handler, account_exception_handler
 from src.core import logger
 from src.core.config import settings
 from src.db import redis
-from src.services.account import AccountDataException
 
 
 @asynccontextmanager

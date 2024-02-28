@@ -6,7 +6,6 @@ from src.schemas.responses import DetailResponse
 from src.services.account import AccountService, get_account_service
 from src.services.authentication import AuthenticationService, get_authentication_service
 
-
 router = APIRouter()
 
 
