@@ -17,13 +17,12 @@ class User(Base):
     role = relationship("Role", back_populates='users')
     login_history = relationship("LoginHistory", back_populates="user", lazy='dynamic')
 
-    # TODO: перенести в schema и изменить исключение
     @validates('username')
     def validate_username(self, key, username):
         if len(username) < 4:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Username length must be > 3')
+            raise ValueError('Username length must be > 3')
         if self.is_correct_password(username):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Username cannot be same as password')
+            raise ValueError('Username cannot be same as password')
         return username
 
     @property

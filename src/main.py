@@ -29,7 +29,7 @@ app = FastAPI(
     default_response_class=JSONResponse,
 )
 app.add_exception_handler(AuthJWTException, authjwt_exception_handler)
-app.add_exception_handler(AccountDataException, account_exception_handler)
+app.add_exception_handler(ValueError, account_exception_handler)
 app.include_router(main_router)
 
 
