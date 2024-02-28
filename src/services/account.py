@@ -1,10 +1,8 @@
 from functools import lru_cache
 
-from fastapi import Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.db import get_async_session
 from src.models.user import User
 
 
@@ -41,6 +39,7 @@ class AccountService:
         user.password = new_password
 
         await db_session.commit()
+
 
 @lru_cache
 def get_account_service():

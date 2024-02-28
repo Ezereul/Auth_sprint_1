@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 
+from src.schemas.roles import RoleCRUD
+
 
 class UserBase(BaseModel):
     """Base model for User."""
@@ -19,3 +21,8 @@ class UserLogin(UserBase):
 class UserCreateOrUpdate(UserLogin):
     """Input model for registration handler."""
     pass
+
+
+class UserWithRole(BaseModel):
+    username: str
+    role: RoleCRUD | None = None

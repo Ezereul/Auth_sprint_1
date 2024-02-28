@@ -1,16 +1,15 @@
 from contextlib import asynccontextmanager
 
 from async_fastapi_jwt_auth.exceptions import AuthJWTException
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from redis.asyncio import Redis
 
-from src.api.errors import authjwt_exception_handler, account_exception_handler
-from src.api.v1 import auth, history, account
+from src.api.errors import account_exception_handler, authjwt_exception_handler
+from src.api.routers import main_router
 from src.core import logger
 from src.core.config import settings
 from src.db import redis
-from src.services.account import AccountDataException
 
 
 @asynccontextmanager
@@ -28,11 +27,15 @@ app = FastAPI(
     log_level=settings.logger.level,
     default_response_class=JSONResponse,
 )
-app.include_router(auth.router)
-app.include_router(history.history_router)
-app.include_router(account.account_router, prefix='/account')
 app.add_exception_handler(AuthJWTException, authjwt_exception_handler)
-app.add_exception_handler(AccountDataException, account_exception_handler)
+app.add_exception_handler(ValueError, account_exception_handler)
+app.include_router(main_router)
+
+
+@app.exception_handler(AuthJWTException)  # add orjson to tweak performance
+def authjwt_exception_handler(request: Request, exc: AuthJWTException):
+    return JSONResponse(status_code=exc.status_code, content={'detail': exc.message})
+
 
 if __name__ == '__main__':
     import uvicorn

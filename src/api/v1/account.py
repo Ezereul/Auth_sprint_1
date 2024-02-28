@@ -6,10 +6,10 @@ from src.schemas.responses import DetailResponse
 from src.services.account import AccountService, get_account_service
 from src.services.authentication import AuthenticationService, get_authentication_service
 
-account_router = APIRouter(tags=['Account'])
+router = APIRouter()
 
 
-@account_router.post(
+@router.post(
     path='/change_username',
     response_model=DetailResponse,
     responses={
@@ -32,7 +32,7 @@ async def change_username(
     return {'detail': 'Username changed'}
 
 
-@account_router.post(
+@router.post(
     path='/change_password',
     response_model=DetailResponse,
     responses={
