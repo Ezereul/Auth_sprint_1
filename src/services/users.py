@@ -16,11 +16,6 @@ class UserService:
         return (await session.scalars(select(User).where(User.id == user_id))).first()  # noqa
 
     async def create(self, username: str, password: str, session: AsyncSession):
-        if len(password) < 8:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Password length must be >= 8')
-        if password == username:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Password cannot be equal to login')
-
         if await self.get_by_name(session, username):
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Username already registered')
 
