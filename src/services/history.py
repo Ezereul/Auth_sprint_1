@@ -1,7 +1,8 @@
 import uuid
 from functools import lru_cache
+
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc
 
 from src.models.history import LoginHistory
 

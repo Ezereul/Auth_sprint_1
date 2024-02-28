@@ -103,10 +103,16 @@ class AuthenticationService:
         'fresh:[jti_1]:[user_id]' -> 'used:[jti_1]:[user_id]'
         'fresh:[jti_2]:[user_id]' -> 'used:[jti_2]:[user_id]'
 
+        if await self.is_refresh_token_used():
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Token was used or does not exist')
+
         :param user_id: ID of the user.
         """
         async for record in self.redis.scan_iter(match='fresh:*:' + user_id, _type='STRING'):
             await self.redis.rename(record, 'used' + record[5:])
+
+    async def jwt_required(self):
+        return await self.auth_jwt.jwt_required()
 
 
 @lru_cache

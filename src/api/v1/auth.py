@@ -1,13 +1,16 @@
 from typing import Annotated
 
-from fastapi import Depends, APIRouter, status, Header
+from fastapi import APIRouter, Depends, Header, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.api.permission import has_permission
+from src.core.constants import RoleAccess
 from src.core.db import get_async_session
 from src.schemas.responses import DetailResponse
-from src.schemas.user import UserLogin, UserCreateOrUpdate, UserDB
+from src.schemas.user import UserCreateOrUpdate, UserDB, UserLogin
 from src.services.authentication import AuthenticationService, get_authentication_service
 from src.services.history import HistoryService, get_history_service
+from src.services.roles import RoleService, get_role_service
 from src.services.users import UserService, get_user_service
 
 router = APIRouter()
@@ -25,10 +28,12 @@ router = APIRouter()
 async def register(
     user: UserCreateOrUpdate,
     user_service: UserService = Depends(get_user_service),
+    role_service: RoleService = Depends(get_role_service),
     session: AsyncSession = Depends(get_async_session),
 ):
-
     user = await user_service.create(user.username, user.password, session)
+
+    await role_service.set_default_role(session, user)
 
     return user
 
@@ -52,21 +57,28 @@ async def login(
     user = await user_service.verify(user.username, user.password, session)
     await history_service.create(session, user.id)
 
-    await auth_service.new_token_pair(user_id=str(user.id), claims={'role': 'stub', 'device': user_agent})
+    role = await user.awaitable_attrs.role
+    await auth_service.new_token_pair(user_id=str(user.id), claims={'device': user_agent, 'access_level': role.access_level})
 
     return {'detail': 'Successfully login'}
 
 
-@router.post('/refresh', response_model=DetailResponse)
+@router.post('/refresh', response_model=DetailResponse, dependencies=[Depends(has_permission(RoleAccess.USER))])
 async def refresh(
     auth_service: AuthenticationService = Depends(get_authentication_service),
     user_agent: Annotated[str, Header(include_in_schema=False)] = 'None',
+    user_service: UserService = Depends(get_user_service),
+    session: AsyncSession = Depends(get_async_session)
 ):
     await auth_service.fresh_jwt_refresh_token_required()
 
-    await auth_service.new_token_pair(claims={'role': 'stub', 'device': user_agent})
+    subject = await auth_service.get_jwt_subject()
+    user = await user_service.get(session, subject)
+    role = await user.awaitable_attrs.role
 
-    return {'detail': 'The token has been refreshed'}
+    await auth_service.new_token_pair(subject=subject, claims={'device': user_agent, 'access_level': role.access_level})
+
+    return {'detail': 'Token has been refreshed'}
 
 
 @router.post('/logout', response_model=DetailResponse)

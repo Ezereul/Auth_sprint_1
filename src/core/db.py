@@ -1,13 +1,13 @@
 import uuid
 
-from sqlalchemy import Column, UUID
+from sqlalchemy import UUID, Column
+from sqlalchemy.ext.asyncio import AsyncAttrs, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import declarative_base, declared_attr
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
 from src.core.config import settings
 
 
-class PreBase:
+class PreBase(AsyncAttrs):
     @declared_attr
     def __tablename__(cls):
         return cls.__name__.lower()

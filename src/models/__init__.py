@@ -1,3 +1,3 @@
-from .history import LoginHistory  # noqa
-from .role import Role  # noqa
-from .user import User  # noqa
+from .history import LoginHistory
+from .roles import Role
+from .user import User
