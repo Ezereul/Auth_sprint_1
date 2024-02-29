@@ -5,10 +5,9 @@ from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.history import LoginHistory
-from src.schemas.history import HistorySchema
 from src.schemas.requests import PageParams
 from src.schemas.responses import PagedResponseSchema
-from src.utils.paginate import paginate
+from src.utils.paginate import paginate_statement
 
 
 class HistoryService:
@@ -19,13 +18,15 @@ class HistoryService:
         await session.refresh(history)
 
     async def get_history_paginated(
-        self, session: AsyncSession, user_id: uuid, page_params: PageParams, response_schema: HistorySchema
-    ) -> PagedResponseSchema:
-        stmt = (select(LoginHistory)
-                .where(LoginHistory.user_id == user_id)  # noqa
-                .order_by(desc(LoginHistory.login_time)))  # noqa
+        self, session: AsyncSession, user_id: uuid, page_params: PageParams
+    ) -> (PagedResponseSchema, int):
+        stmt = (
+            select(LoginHistory)
+            .where(LoginHistory.user_id == user_id)  # noqa
+            .order_by(desc(LoginHistory.login_time)))   # noqa
 
-        return await paginate(session, stmt, page_params, response_schema)
+        paginated_stmt, pages_count = await paginate_statement(session, stmt, page_params)
+        return (await session.scalars(paginated_stmt)).all(), pages_count
 
 
 @lru_cache

@@ -30,4 +30,10 @@ async def get_user_history(
 
     user_id = await Authorize.get_jwt_subject()
 
-    return await history_service.get_history_paginated(session, user_id, page_params, HistorySchema)
+    data, pages_count = await history_service.get_history_paginated(session, user_id, page_params)
+
+    return PagedResponseSchema(
+        last=pages_count,
+        items=[HistorySchema.from_orm(item) for item in data],
+        **page_params.model_dump(),
+    )
