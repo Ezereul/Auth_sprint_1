@@ -2,7 +2,7 @@
 
 Revision ID: 01
 Revises: 
-Create Date: 2024-02-29 14:57:47.172496
+Create Date: 2024-02-29 15:23:15.673472
 
 """
 from typing import Sequence, Union
@@ -37,7 +37,7 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_user_username'), 'user', ['username'], unique=True)
     op.create_table('loginhistory',
-    sa.Column('user_id', sa.UUID(), nullable=True),
+    sa.Column('user_id', sa.UUID(), nullable=False),
     sa.Column('login_time', sa.DateTime(), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
