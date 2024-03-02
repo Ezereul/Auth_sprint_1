@@ -15,11 +15,11 @@ class UserService:
     async def get(self, session: AsyncSession, user_id: UUID):
         return (await session.scalars(select(User).where(User.id == user_id))).first()  # noqa
 
-    async def create(self, username: str, password: str, session: AsyncSession):
+    async def create(self, username: str, password: str, session: AsyncSession, role) -> User:
         if await self.get_by_name(session, username):
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Username already registered')
 
-        new_user = User(username=username, password=password)
+        new_user = User(username=username, password=password, role=role)
         session.add(new_user)
         await session.commit()
 

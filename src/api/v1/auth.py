@@ -29,10 +29,8 @@ async def register(
     role_service: RoleService = Depends(get_role_service),
     session: AsyncSession = Depends(get_async_session),
 ):
-    user = await user_service.create(user.username, user.password, session)
-
-    await role_service.set_default_role(session, user)
-
+    role = await role_service.get_default_role(session)
+    user = await user_service.create(user.username, user.password, session, role)
     return user
 
 
