@@ -46,11 +46,11 @@ class RoleService:
 
         return user
 
-    async def set_default_role(self, session: AsyncSession, user: User):
+    async def get_default_role(self, session: AsyncSession):
         if not (default_role := await self.get_by_name(session, DEFAULT_ROLE_DATA['name'])):
             default_role = await self.create(session, DEFAULT_ROLE_DATA)
 
-        await self.assign_role(session, default_role, user)
+        return default_role
 
 
 @lru_cache
