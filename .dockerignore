@@ -1,0 +1,7 @@
+*
+!src
+!alembic
+!docker-entrypoint.sh
+!poetry.lock
+!pyproject.toml
+!alembic.ini
