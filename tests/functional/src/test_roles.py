@@ -90,13 +90,12 @@ async def role_not_exists(test_db_session, role_data):
 async def test_role_management(superuser_authenticated_client, test_db_session, roles_fixture, action, role_data,
                                expected_status, post_action):
     role_id = roles_fixture[role_data['name']].id if role_data.get('name') in roles_fixture else None
-    print(role_id)
     url = "/role/" + ("create" if action == "post" else "") + (f"{role_id}" if role_id else "")
     method = getattr(superuser_authenticated_client, action)
 
     response = await method(url) if action == "delete" else await method(url, json=role_data)
-    assert response.status_code == expected_status
 
+    assert response.status_code == expected_status
     assert await post_action(test_db_session, role_data)
 
 
@@ -130,8 +129,11 @@ async def test_assign_role_to_user(superuser_authenticated_client, test_db_sessi
         "/role/assign",
         params={"username": username, "role_name": role_name}
     )
+
     assert response.status_code == HTTPStatus.OK
+
     response_json = response.json()
+
     assert response_json["username"] == username
     assert response_json["role"]["name"] == role_name
 
@@ -149,12 +151,16 @@ async def test_revoke_role_from_user(superuser_authenticated_client, test_db_ses
         "/role/revoke",
         params={"username": username}
     )
+
     assert response.status_code == HTTPStatus.OK
+
     response_json = response.json()
+
     assert response_json["username"] == username
     assert response_json["role"]["name"] == roles_fixture['user'].name
 
     user = (await test_db_session.scalars(select(User).where(User.username == username))).first()
+
     assert user.role.name == roles_fixture['user'].name
 
 

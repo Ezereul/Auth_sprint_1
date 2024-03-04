@@ -14,6 +14,7 @@ async def test_change_username(authenticated_client, test_db_session, user_fixtu
     assert response.status_code == HTTPStatus.OK
 
     user = (await test_db_session.scalars(select(User).where(User.username == request_params["new_username"]))).first()  # noqa
+
     assert user is not None
     assert user.id == user_fixture.id
 

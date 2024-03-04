@@ -12,11 +12,13 @@ async def test_register_success(client_fixture, test_db_session, roles_fixture):
         'username': 'newuser',
         'password': 'strongpassword'
     })
+
     assert response.status_code == HTTPStatus.CREATED
     assert 'username' in response.json()
     assert response.json()['username'] == 'newuser'
 
     user = (await test_db_session.scalars(select(User).where(User.username == 'newuser'))).first()  # noqa
+
     assert user is not None
     assert user.role_id == roles_fixture["user"].id
 
@@ -27,9 +29,11 @@ async def test_register_weak_password(client_fixture, test_db_session):
         'username': 'anotheruser',
         'password': 'weak'
     })
+
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
     user = (await test_db_session.scalars(select(User).where(User.username == 'newuser'))).first()  # noqa
+
     assert user is None
 
 
@@ -39,6 +43,7 @@ async def test_register_existing_username(client_fixture, user_fixture):
         'username': user_fixture.username,
         'password': 'anotherstrongpassword'
     })
+
     assert response.status_code == HTTPStatus.CONFLICT
 
 
@@ -48,13 +53,14 @@ async def test_login_success(client_fixture, user_fixture):
         'username': user_fixture.username,
         'password': 'testpassword'
     })
+
     assert response.status_code == HTTPStatus.OK
     assert 'detail' in response.json()
     assert response.json()['detail'] == 'Successfully login'
 
     cookies = response.headers.get('set-cookie')
-    assert cookies is not None
 
+    assert cookies is not None
     assert 'access_token_cookie=' in cookies
 
 
@@ -64,6 +70,7 @@ async def test_login_wrong_password(client_fixture, user_fixture):
         'username': user_fixture.username,
         'password': 'wrongpassword'
     })
+
     assert response.status_code == HTTPStatus.UNAUTHORIZED
 
 
@@ -73,30 +80,31 @@ async def test_login_nonexistent_user(client_fixture):
         'username': 'nonexistentuser',
         'password': 'somepassword'
     })
+
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
 @pytest.mark.asyncio
 async def test_refresh_token(authenticated_client):
     response = await authenticated_client.post("/auth/refresh")
+
     assert response.status_code == HTTPStatus.OK
 
     cookies = response.headers.get('set-cookie')
-    assert cookies is not None
 
+    assert cookies is not None
     assert 'access_token_cookie=' in cookies
 
 
 @pytest.mark.asyncio
 async def test_logout(authenticated_client):
     refresh_token_cookie = authenticated_client.cookies.get("refresh_token_cookie")
-
     logout_response = await authenticated_client.post(
         "/auth/logout",
         cookies={"refresh_token_cookie": refresh_token_cookie}
     )
-    assert logout_response.status_code == HTTPStatus.OK
 
+    assert logout_response.status_code == HTTPStatus.OK
     assert "set-cookie" in logout_response.headers
     assert 'refresh_token_cookie=""' in logout_response.headers["set-cookie"]
 
@@ -104,4 +112,5 @@ async def test_logout(authenticated_client):
         "/auth/refresh",
         cookies={"refresh_token_cookie": refresh_token_cookie}
     )
+
     assert protected_response.status_code == HTTPStatus.UNAUTHORIZED
