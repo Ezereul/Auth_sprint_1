@@ -32,6 +32,15 @@ $ openssl rsa -in rsa.key -pubout > rsa.key.pub
 
 После запуска можно сразу регистрировать нового пользователя.
 
+## Запуск тестов
+
+Тесты запускаются на отдельном образе postgres-test:
+
+```shell
+docker compose -f docker-compose-test.yml up -d postgres-test
+poetry run pytest
+```
+
 ## Документация API
 
 Документация доступна по url: `http://0.0.0.0/docs`.
