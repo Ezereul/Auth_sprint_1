@@ -135,3 +135,7 @@ dmypy.json
 .idea
 /.ruff_cache/
 /setup.cfg
+
+# Keys
+rsa.key
+rsa.key.pub
