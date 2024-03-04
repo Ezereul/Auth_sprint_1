@@ -1,5 +1,7 @@
 # Backend сервиса авторизации
 
+https://github.com/Ezereul/Auth_sprint_1
+
 Backend сервиса авторизации с системой ролей на FastAPI.
 
 ---
