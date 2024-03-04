@@ -96,10 +96,10 @@ async def revoke_role(
     if not (user := await user_service.get_by_name(session, username)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
 
-    await role_service.set_default_role(session, user)
-    role = await user.awaitable_attrs.role
+    default_role = await role_service.get_default_role(session)
+    user = await role_service.assign_role(session, default_role, user)
 
     return UserWithRole(
         username=user.username,
-        role=RoleCRUD(name=role.name, access_level=role.access_level)
+        role=RoleCRUD(name=default_role.name, access_level=default_role.access_level)
     )

@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 
 from async_fastapi_jwt_auth.exceptions import AuthJWTException
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from redis.asyncio import Redis
 
@@ -30,11 +30,6 @@ app = FastAPI(
 app.add_exception_handler(AuthJWTException, authjwt_exception_handler)
 app.add_exception_handler(ValueError, account_exception_handler)
 app.include_router(main_router)
-
-
-@app.exception_handler(AuthJWTException)  # add orjson to tweak performance
-def authjwt_exception_handler(request: Request, exc: AuthJWTException):
-    return JSONResponse(status_code=exc.status_code, content={'detail': exc.message})
 
 
 if __name__ == '__main__':

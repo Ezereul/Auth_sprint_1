@@ -10,6 +10,12 @@ services:
       - .env
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} -p ${POSTGRES_PORT}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
 
   redis:
     image: redis:7.2.4
@@ -32,6 +38,19 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:1.19.2
+    container_name: nginx-auth
+    volumes:
+      - ./configs/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./configs/confd:/etc/nginx/conf.d:ro
+    depends_on:
+      - api
+    ports:
+      - "80:80"
 
 volumes:
   postgres-data:
